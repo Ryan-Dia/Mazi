@@ -4,6 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Star } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Leaflet 아이콘 설정
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 interface Restaurant {
   id: string;
@@ -31,7 +42,17 @@ export const MapView = () => {
         .not('longitude', 'is', null);
 
       if (error) throw error;
-      setRestaurants(data || []);
+      
+      // 타입 안전성을 위해 latitude, longitude가 있는 것만 필터링
+      const validRestaurants = (data || []).filter(
+        (restaurant): restaurant is Restaurant => 
+          restaurant.latitude !== null && 
+          restaurant.longitude !== null &&
+          typeof restaurant.latitude === 'number' &&
+          typeof restaurant.longitude === 'number'
+      );
+      
+      setRestaurants(validRestaurants);
     } catch (error) {
       console.error('Error fetching restaurants:', error);
     } finally {
@@ -84,6 +105,8 @@ export const MapView = () => {
     );
   }
 
+  const center = userLocation || { lat: 37.5665, lng: 126.978 };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
@@ -91,18 +114,89 @@ export const MapView = () => {
         <h2 className="text-2xl font-bold text-gray-900">맛집 지도</h2>
       </div>
 
-      {/* 지도 영역 (간단한 리스트 형태로 표시) */}
+      {/* 실제 지도 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Navigation className="h-5 w-5 mr-2" />
-            내 주변 맛집
-            {userLocation && (
-              <span className="ml-2 text-sm font-normal text-gray-500">
-                현재 위치: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
-              </span>
-            )}
+            맛집 위치 지도
           </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-96 w-full rounded-lg overflow-hidden">
+            <MapContainer
+              center={[center.lat, center.lng]}
+              zoom={13}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              
+              {/* 사용자 위치 마커 */}
+              {userLocation && (
+                <Marker position={[userLocation.lat, userLocation.lng]}>
+                  <Popup>
+                    <div className="text-center">
+                      <strong>내 위치</strong>
+                    </div>
+                  </Popup>
+                </Marker>
+              )}
+              
+              {/* 맛집 마커들 */}
+              {restaurants.map((restaurant) => (
+                <Marker 
+                  key={restaurant.id} 
+                  position={[restaurant.latitude, restaurant.longitude]}
+                >
+                  <Popup>
+                    <div className="min-w-48">
+                      <h3 className="font-semibold text-lg mb-2">{restaurant.name}</h3>
+                      <div className="space-y-1">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {restaurant.location}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Badge variant="secondary">{restaurant.category}</Badge>
+                          {restaurant.rating && (
+                            <div className="flex items-center">
+                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                              <span className="ml-1 text-sm font-medium">{restaurant.rating}</span>
+                            </div>
+                          )}
+                        </div>
+                        {restaurant.description && (
+                          <p className="text-sm text-gray-600 mt-2">
+                            {restaurant.description}
+                          </p>
+                        )}
+                        {userLocation && (
+                          <div className="text-xs text-blue-600 font-medium mt-2">
+                            거리: {calculateDistance(
+                              userLocation.lat, 
+                              userLocation.lng, 
+                              restaurant.latitude, 
+                              restaurant.longitude
+                            ).toFixed(1)}km
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 맛집 리스트 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>맛집 목록</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
@@ -148,10 +242,6 @@ export const MapView = () => {
                         {restaurant.description}
                       </p>
                     )}
-                    
-                    <div className="text-xs text-gray-500">
-                      좌표: {restaurant.latitude.toFixed(4)}, {restaurant.longitude.toFixed(4)}
-                    </div>
                   </div>
                 </div>
               );
@@ -164,20 +254,6 @@ export const MapView = () => {
               <p className="text-gray-500">지도에 표시할 맛집이 없습니다.</p>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* 실제 프로덕션에서는 여기에 Leaflet이나 Google Maps를 통합할 수 있습니다 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>지도 통합 안내</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600">
-            실제 지도 기능을 위해서는 Leaflet이나 Google Maps API를 통합하여 
-            맛집 위치를 시각적으로 표시할 수 있습니다. 현재는 거리 계산과 좌표 정보를 
-            리스트 형태로 제공하고 있습니다.
-          </p>
         </CardContent>
       </Card>
     </div>

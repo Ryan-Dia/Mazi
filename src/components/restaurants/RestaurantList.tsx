@@ -16,8 +16,8 @@ interface Restaurant {
   category: string;
   description: string;
   rating: number;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   user_id: string;
   created_at: string;
 }
@@ -167,6 +167,11 @@ export const RestaurantList = () => {
                   <p className="text-sm text-gray-600 line-clamp-2">
                     {restaurant.description}
                   </p>
+                )}
+                {restaurant.latitude && restaurant.longitude && (
+                  <div className="text-xs text-gray-400">
+                    📍 지도에 표시됨
+                  </div>
                 )}
               </div>
             </CardContent>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,7 +43,41 @@ export const FriendsList = () => {
         `)
         .or(`requester_id.eq.${user?.id},addressee_id.eq.${user?.id}`);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Friendship fetch error:', error);
+        // 관계 조인에 실패한 경우 단순 조회로 대체
+        const { data: simpleFriendships, error: simpleError } = await supabase
+          .from('friendships')
+          .select('*')
+          .or(`requester_id.eq.${user?.id},addressee_id.eq.${user?.id}`);
+        
+        if (simpleError) throw simpleError;
+        
+        // 프로필 정보를 별도로 가져오기
+        const userIds = new Set();
+        simpleFriendships?.forEach(f => {
+          userIds.add(f.requester_id);
+          userIds.add(f.addressee_id);
+        });
+        
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', Array.from(userIds));
+        
+        const profileMap = new Map();
+        profileData?.forEach(p => profileMap.set(p.id, p));
+        
+        const enrichedFriendships = simpleFriendships?.map(f => ({
+          ...f,
+          requester: profileMap.get(f.requester_id) || { id: f.requester_id, username: 'Unknown', display_name: 'Unknown' },
+          addressee: profileMap.get(f.addressee_id) || { id: f.addressee_id, username: 'Unknown', display_name: 'Unknown' }
+        })) || [];
+        
+        setFriendships(enrichedFriendships);
+        return;
+      }
+      
       setFriendships(data || []);
     } catch (error) {
       console.error('Error fetching friendships:', error);
