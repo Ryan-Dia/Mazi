@@ -14,12 +14,14 @@ interface Restaurant {
   name: string;
   location: string;
   category: string;
-  description: string;
-  rating: number;
+  description: string | null;
+  rating: number | null;
   latitude: number | null;
   longitude: number | null;
   user_id: string;
-  created_at: string;
+  created_at: string | null;
+  updated_at: string | null;
+  image_url: string | null;
 }
 
 export const RestaurantList = () => {

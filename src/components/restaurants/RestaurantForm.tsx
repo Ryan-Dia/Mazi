@@ -15,11 +15,14 @@ interface Restaurant {
   name: string;
   location: string;
   category: string;
-  description: string;
-  rating: number;
-  latitude: number;
-  longitude: number;
+  description: string | null;
+  rating: number | null;
+  latitude: number | null;
+  longitude: number | null;
   user_id: string;
+  created_at: string | null;
+  updated_at: string | null;
+  image_url: string | null;
 }
 
 interface RestaurantFormProps {
@@ -167,6 +170,8 @@ export const RestaurantForm = ({ restaurant, onSuccess, onCancel }: RestaurantFo
                 <SelectItem value="중식">중식</SelectItem>
                 <SelectItem value="일식">일식</SelectItem>
                 <SelectItem value="양식">양식</SelectItem>
+                <SelectItem value="이탈리안">이탈리안</SelectItem>
+                <SelectItem value="터키음식">터키음식</SelectItem>
                 <SelectItem value="분식">분식</SelectItem>
                 <SelectItem value="치킨">치킨</SelectItem>
                 <SelectItem value="피자">피자</SelectItem>

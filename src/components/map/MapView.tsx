@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Star } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -21,15 +22,23 @@ interface Restaurant {
   name: string;
   location: string;
   category: string;
-  description: string;
-  rating: number;
+  description: string | null;
+  rating: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  user_id: string;
+  created_at: string | null;
+  updated_at: string | null;
+  image_url: string | null;
+}
+
+interface ValidRestaurant extends Restaurant {
   latitude: number;
   longitude: number;
-  user_id: string;
 }
 
 export const MapView = () => {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [restaurants, setRestaurants] = useState<ValidRestaurant[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,7 +54,7 @@ export const MapView = () => {
       
       // 타입 안전성을 위해 latitude, longitude가 있는 것만 필터링
       const validRestaurants = (data || []).filter(
-        (restaurant): restaurant is Restaurant => 
+        (restaurant): restaurant is ValidRestaurant => 
           restaurant.latitude !== null && 
           restaurant.longitude !== null &&
           typeof restaurant.latitude === 'number' &&
@@ -105,7 +114,7 @@ export const MapView = () => {
     );
   }
 
-  const center = userLocation || { lat: 37.5665, lng: 126.978 };
+  const center: LatLngExpression = userLocation ? [userLocation.lat, userLocation.lng] : [37.5665, 126.978];
 
   return (
     <div className="space-y-6">
@@ -125,13 +134,13 @@ export const MapView = () => {
         <CardContent>
           <div className="h-96 w-full rounded-lg overflow-hidden">
             <MapContainer
-              center={[center.lat, center.lng]}
+              center={center}
               zoom={13}
               style={{ height: '100%', width: '100%' }}
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
               
               {/* 사용자 위치 마커 */}

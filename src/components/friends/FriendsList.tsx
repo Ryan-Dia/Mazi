@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Profile {
   id: string;
   username: string;
-  display_name: string;
+  display_name: string | null;
 }
 
 interface Friendship {
@@ -20,8 +21,8 @@ interface Friendship {
   requester_id: string;
   addressee_id: string;
   status: string;
-  requester: Profile;
-  addressee: Profile;
+  requester?: Profile;
+  addressee?: Profile;
 }
 
 export const FriendsList = () => {
@@ -34,51 +35,36 @@ export const FriendsList = () => {
 
   const fetchFriendships = async () => {
     try {
-      const { data, error } = await supabase
+      // 간단한 조회 후 프로필 정보를 별도로 가져오기
+      const { data: simpleFriendships, error } = await supabase
         .from('friendships')
-        .select(`
-          *,
-          requester:profiles!friendships_requester_id_fkey(*),
-          addressee:profiles!friendships_addressee_id_fkey(*)
-        `)
+        .select('*')
         .or(`requester_id.eq.${user?.id},addressee_id.eq.${user?.id}`);
-
-      if (error) {
-        console.error('Friendship fetch error:', error);
-        // 관계 조인에 실패한 경우 단순 조회로 대체
-        const { data: simpleFriendships, error: simpleError } = await supabase
-          .from('friendships')
-          .select('*')
-          .or(`requester_id.eq.${user?.id},addressee_id.eq.${user?.id}`);
-        
-        if (simpleError) throw simpleError;
-        
-        // 프로필 정보를 별도로 가져오기
-        const userIds = new Set();
-        simpleFriendships?.forEach(f => {
-          userIds.add(f.requester_id);
-          userIds.add(f.addressee_id);
-        });
-        
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('id', Array.from(userIds));
-        
-        const profileMap = new Map();
-        profileData?.forEach(p => profileMap.set(p.id, p));
-        
-        const enrichedFriendships = simpleFriendships?.map(f => ({
-          ...f,
-          requester: profileMap.get(f.requester_id) || { id: f.requester_id, username: 'Unknown', display_name: 'Unknown' },
-          addressee: profileMap.get(f.addressee_id) || { id: f.addressee_id, username: 'Unknown', display_name: 'Unknown' }
-        })) || [];
-        
-        setFriendships(enrichedFriendships);
-        return;
-      }
       
-      setFriendships(data || []);
+      if (error) throw error;
+      
+      // 프로필 정보를 별도로 가져오기
+      const userIds = new Set<string>();
+      simpleFriendships?.forEach(f => {
+        userIds.add(f.requester_id);
+        userIds.add(f.addressee_id);
+      });
+      
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', Array.from(userIds));
+      
+      const profileMap = new Map<string, Profile>();
+      profileData?.forEach(p => profileMap.set(p.id, p));
+      
+      const enrichedFriendships = simpleFriendships?.map(f => ({
+        ...f,
+        requester: profileMap.get(f.requester_id) || { id: f.requester_id, username: 'Unknown', display_name: 'Unknown' },
+        addressee: profileMap.get(f.addressee_id) || { id: f.addressee_id, username: 'Unknown', display_name: 'Unknown' }
+      })) || [];
+      
+      setFriendships(enrichedFriendships);
     } catch (error) {
       console.error('Error fetching friendships:', error);
     }
@@ -273,37 +259,42 @@ export const FriendsList = () => {
           <div className="space-y-3">
             {friendships
               .filter(f => f.addressee_id === user?.id && f.status === 'pending')
-              .map((friendship) => (
-                <div key={friendship.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {friendship.requester.display_name?.[0] || friendship.requester.username[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{friendship.requester.display_name || friendship.requester.username}</p>
-                      <p className="text-sm text-gray-500">@{friendship.requester.username}</p>
+              .map((friendship) => {
+                const requester = friendship.requester;
+                if (!requester) return null;
+                
+                return (
+                  <div key={friendship.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Avatar>
+                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                          {requester.display_name?.[0] || requester.username[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{requester.display_name || requester.username}</p>
+                        <p className="text-sm text-gray-500">@{requester.username}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        onClick={() => respondToFriendRequest(friendship.id, 'accepted')}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => respondToFriendRequest(friendship.id, 'rejected')}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      onClick={() => respondToFriendRequest(friendship.id, 'accepted')}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => respondToFriendRequest(friendship.id, 'rejected')}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             
             {friendships.filter(f => f.addressee_id === user?.id && f.status === 'pending').length === 0 && (
               <p className="text-gray-500 text-center py-4">받은 친구 요청이 없습니다.</p>
@@ -323,6 +314,7 @@ export const FriendsList = () => {
               .filter(f => f.status === 'accepted')
               .map((friendship) => {
                 const friend = getFriendProfile(friendship);
+                if (!friend) return null;
                 
                 return (
                   <div key={friendship.id} className="flex items-center justify-between p-3 border rounded-lg">
