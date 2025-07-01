@@ -1,8 +1,6 @@
 # Welcome to your Lovable project
 
-## Project info
-
-**URL**: https://lovable.dev/projects/5c8c0682-6446-4671-abe3-329a1fa3768a
+배포 주소 : https://taste-bud-toss-map.lovable.app/
 
 ## How can I edit this code?
 
