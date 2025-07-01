@@ -2,70 +2,51 @@
 
 배포 주소 : https://taste-bud-toss-map.lovable.app/
 
-## How can I edit this code?
+나와 친구끼리만 맛집 리스트를 공유하는 서비스를 만들었는데 아래양식처럼 사용자 시나리오 및 스토리 및 페르소나를 작성해줘
 
-There are several ways of editing your application.
 
-**Use Lovable**
+페르소나
+- 소셜 미식가 – 이지훈 (30세)
+- 직업: IT 스타트업 기획자
+- 라이프스타일: 평일엔 회의와 문서 작성으로 바쁘고, 주말에 친구들과 외식 모임을 즐김
+- 목표: 믿을 수 있는 사람들과 검증된 맛집 정보를 편리하게 공유
+- 니즈: 친구가 추천한 맛집 리스트 확인·관리, 새로운 맛집 추가 시 간편 알림
+- 페인 포인트: SNS에 맛집 정보가 흩어져있어 관리가 불편, 친구 추천을 놓치기 쉬움
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/5c8c0682-6446-4671-abe3-329a1fa3768a) and start prompting.
+⸻
 
-Changes made via Lovable will be committed automatically to this repo.
+사용자 시나리오 및 스토리
 
-**Use your preferred IDE**
+1. 친구 추천 맛집 확인
+	•	상황: 주말 저녁, 친구들이 추천한 맛집 중 어디를 갈지 결정해야 함
+	•	사용자 시나리오:
+	1.	모바일에서 ‘MyTaste’ 앱 실행
+	2.	[친구 리스트] 탭에서 친구별로 정리된 맛집 확인
+	3.	마음에 드는 맛집을 터치해 상세 정보(위치·메뉴·리뷰) 확인
+	4.	지도 아이콘을 눌러 예약할 식당으로 길안내 시작
+	•	사용자 스토리:
+“친구들이 추천해준 검증된 맛집 정보를 한눈에 보고, 지도 안내까지 바로 연결되니 약속 장소 정하는 데 걸리는 시간이 확 줄었습니다.”
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+⸻
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. 나만의 맛집 추가 및 공유
+	•	상황: 새로운 맛집을 발견해 친구들과 공유하고 싶음
+	•	사용자 시나리오:
+	1.	앱에서 [+ 맛집 추가] 버튼 클릭
+	2.	식당명, 사진, 위치, 간단한 코멘트 입력 후 저장
+	3.	공유할 친구 선택(1촌 관계) → “보내기” 클릭
+	4.	선택된 친구의 [받은 추천] 리스트에 자동 등록
+	•	사용자 스토리:
+“맛있는 집을 찾으면 바로 저장하고, 공유 버튼 한 번으로 친구들에게 알려줄 수 있어 너무 편해요. 덕분에 우리 모임 메뉴 선정이 정말 수월해졌어요.”
 
-Follow these steps:
+⸻
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/5c8c0682-6446-4671-abe3-329a1fa3768a) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+3. 친구 새 추천 알림 받기
+	•	상황: 업무 중에 친구가 새 맛집을 추천해주었는지 궁금
+	•	사용자 시나리오:
+	1.	푸시 알림 “민지님이 새 맛집을 추천했어요” 확인
+	2.	알림 클릭 후 앱의 [알림 센터] 진입
+	3.	해당 맛집 카드 눌러 상세 보기
+	4.	가고 싶은 일정에 북마크 추가
+	•	사용자 스토리:
+“업무 중에도 친구 추천 소식을 놓치지 않고 바로 확인할 수 있어, 점심 모임이나 주말 식당 선택에 매번 고민이 줄어들었어요.”
