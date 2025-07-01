@@ -1,21 +1,16 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Star } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { LatLngExpression } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 
-// Leaflet 아이콘 설정
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+// 카카오 맵 타입 정의
+declare global {
+  interface Window {
+    kakao: any;
+  }
+}
 
 interface Restaurant {
   id: string;
@@ -41,6 +36,8 @@ export const MapView = () => {
   const [restaurants, setRestaurants] = useState<ValidRestaurant[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [loading, setLoading] = useState(true);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<any>(null);
 
   const fetchRestaurants = async () => {
     try {
@@ -101,6 +98,98 @@ export const MapView = () => {
     return R * c;
   };
 
+  // 카카오 맵 초기화
+  const initializeKakaoMap = () => {
+    if (!mapContainer.current || !window.kakao) return;
+
+    const center = userLocation 
+      ? new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng)
+      : new window.kakao.maps.LatLng(37.5665, 126.978);
+
+    const options = {
+      center: center,
+      level: 3
+    };
+
+    map.current = new window.kakao.maps.Map(mapContainer.current, options);
+
+    // 사용자 위치 마커
+    if (userLocation) {
+      const userMarkerPosition = new window.kakao.maps.LatLng(userLocation.lat, userLocation.lng);
+      const userMarker = new window.kakao.maps.Marker({
+        position: userMarkerPosition
+      });
+      userMarker.setMap(map.current);
+
+      const userInfoWindow = new window.kakao.maps.InfoWindow({
+        content: '<div style="padding:5px;">내 위치</div>'
+      });
+
+      window.kakao.maps.event.addListener(userMarker, 'click', () => {
+        userInfoWindow.open(map.current, userMarker);
+      });
+    }
+
+    // 맛집 마커들
+    restaurants.forEach((restaurant) => {
+      const markerPosition = new window.kakao.maps.LatLng(restaurant.latitude, restaurant.longitude);
+      const marker = new window.kakao.maps.Marker({
+        position: markerPosition
+      });
+      marker.setMap(map.current);
+
+      const distance = userLocation 
+        ? calculateDistance(
+            userLocation.lat, 
+            userLocation.lng, 
+            restaurant.latitude, 
+            restaurant.longitude
+          )
+        : null;
+
+      const infoContent = `
+        <div style="padding:10px; min-width:200px;">
+          <h3 style="margin:0 0 8px 0; font-size:16px; font-weight:bold;">${restaurant.name}</h3>
+          <div style="margin-bottom:4px; color:#666; font-size:12px;">
+            📍 ${restaurant.location}
+          </div>
+          <div style="margin-bottom:4px;">
+            <span style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:11px;">${restaurant.category}</span>
+            ${restaurant.rating ? `<span style="margin-left:8px; color:#f39c12;">⭐ ${restaurant.rating}</span>` : ''}
+          </div>
+          ${restaurant.description ? `<p style="margin:8px 0 0 0; font-size:12px; color:#666;">${restaurant.description}</p>` : ''}
+          ${distance ? `<div style="margin-top:8px; color:#3498db; font-size:11px; font-weight:bold;">거리: ${distance.toFixed(1)}km</div>` : ''}
+        </div>
+      `;
+
+      const infoWindow = new window.kakao.maps.InfoWindow({
+        content: infoContent
+      });
+
+      window.kakao.maps.event.addListener(marker, 'click', () => {
+        infoWindow.open(map.current, marker);
+      });
+    });
+  };
+
+  // 카카오 맵 스크립트 로드
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=cde1a70ea261f91eddb64fa7391dfafc&autoload=false`;
+    document.head.appendChild(script);
+
+    script.onload = () => {
+      window.kakao.maps.load(() => {
+        initializeKakaoMap();
+      });
+    };
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, [userLocation, restaurants]);
+
   useEffect(() => {
     fetchRestaurants();
     getUserLocation();
@@ -114,8 +203,6 @@ export const MapView = () => {
     );
   }
 
-  const center: LatLngExpression = userLocation ? [userLocation.lat, userLocation.lng] : [37.5665, 126.978];
-
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
@@ -123,7 +210,7 @@ export const MapView = () => {
         <h2 className="text-2xl font-bold text-gray-900">맛집 지도</h2>
       </div>
 
-      {/* 실제 지도 */}
+      {/* 카카오 지도 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
@@ -133,72 +220,7 @@ export const MapView = () => {
         </CardHeader>
         <CardContent>
           <div className="h-96 w-full rounded-lg overflow-hidden">
-            <MapContainer
-              center={center}
-              zoom={13}
-              scrollWheelZoom={false}
-              style={{ height: '100%', width: '100%' }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              
-              {/* 사용자 위치 마커 */}
-              {userLocation && (
-                <Marker position={[userLocation.lat, userLocation.lng]}>
-                  <Popup>
-                    <div className="text-center">
-                      <strong>내 위치</strong>
-                    </div>
-                  </Popup>
-                </Marker>
-              )}
-              
-              {/* 맛집 마커들 */}
-              {restaurants.map((restaurant) => (
-                <Marker 
-                  key={restaurant.id} 
-                  position={[restaurant.latitude, restaurant.longitude]}
-                >
-                  <Popup>
-                    <div className="min-w-48">
-                      <h3 className="font-semibold text-lg mb-2">{restaurant.name}</h3>
-                      <div className="space-y-1">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {restaurant.location}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary">{restaurant.category}</Badge>
-                          {restaurant.rating && (
-                            <div className="flex items-center">
-                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                              <span className="ml-1 text-sm font-medium">{restaurant.rating}</span>
-                            </div>
-                          )}
-                        </div>
-                        {restaurant.description && (
-                          <p className="text-sm text-gray-600 mt-2">
-                            {restaurant.description}
-                          </p>
-                        )}
-                        {userLocation && (
-                          <div className="text-xs text-blue-600 font-medium mt-2">
-                            거리: {calculateDistance(
-                              userLocation.lat, 
-                              userLocation.lng, 
-                              restaurant.latitude, 
-                              restaurant.longitude
-                            ).toFixed(1)}km
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+            <div ref={mapContainer} style={{ height: '100%', width: '100%' }} />
           </div>
         </CardContent>
       </Card>
