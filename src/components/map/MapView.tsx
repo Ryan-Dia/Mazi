@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -135,6 +136,7 @@ export const MapView = () => {
             <MapContainer
               center={center}
               zoom={13}
+              scrollWheelZoom={false}
               style={{ height: '100%', width: '100%' }}
             >
               <TileLayer
