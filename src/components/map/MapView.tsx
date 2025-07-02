@@ -25,6 +25,9 @@ interface Restaurant {
   created_at: string | null;
   updated_at: string | null;
   image_url: string | null;
+  view_count: number | null;
+  last_viewed_at: string | null;
+  popularity_score: number | null;
 }
 
 interface ValidRestaurant extends Restaurant {

@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp, Clock, Star, MapPin, Eye } from 'lucide-react';
 
@@ -33,7 +32,9 @@ export const PopularRestaurants = () => {
         .order('view_count', { ascending: false })
         .limit(5);
 
-      if (dailyError) throw dailyError;
+      if (dailyError) {
+        console.error('Daily popular restaurants error:', dailyError);
+      }
 
       // 월간 인기 맛집 (인기 점수 기준 상위 5개)
       const { data: monthlyData, error: monthlyError } = await supabase
@@ -42,7 +43,12 @@ export const PopularRestaurants = () => {
         .order('popularity_score', { ascending: false })
         .limit(5);
 
-      if (monthlyError) throw monthlyError;
+      if (monthlyError) {
+        console.error('Monthly popular restaurants error:', monthlyError);
+      }
+
+      console.log('Daily popular data:', dailyData);
+      console.log('Monthly popular data:', monthlyData);
 
       setDailyPopular(dailyData || []);
       setMonthlyPopular(monthlyData || []);
@@ -170,6 +176,6 @@ export const PopularRestaurants = () => {
           </TabsContent>
         </Tabs>
       </CardContent>
-    </Card>
+      </Card>
   );
 };

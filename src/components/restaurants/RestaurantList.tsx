@@ -1,11 +1,14 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, MapPin, Star, Edit, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, MapPin, Star, Edit, Trash2, Calendar } from 'lucide-react';
 import { RestaurantForm } from './RestaurantForm';
+import { ReservationSystem } from './ReservationSystem';
 import { useToast } from '@/hooks/use-toast';
 
 interface Restaurant {
@@ -130,27 +133,47 @@ export const RestaurantList = () => {
                     {restaurant.location}
                   </div>
                 </div>
-                {restaurant.user_id === user?.id && (
-                  <div className="flex space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingRestaurant(restaurant);
-                        setShowForm(true);
-                      }}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(restaurant.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
+                <div className="flex space-x-1">
+                  {/* 예약 버튼 */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Calendar className="h-3 w-3" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>레스토랑 예약</DialogTitle>
+                      </DialogHeader>
+                      <ReservationSystem 
+                        restaurantId={restaurant.id} 
+                        restaurantName={restaurant.name}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                  
+                  {restaurant.user_id === user?.id && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingRestaurant(restaurant);
+                          setShowForm(true);
+                        }}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(restaurant.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
