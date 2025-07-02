@@ -137,13 +137,16 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          last_viewed_at: string | null
           latitude: number | null
           location: string
           longitude: number | null
           name: string
+          popularity_score: number | null
           rating: number | null
           updated_at: string | null
           user_id: string
+          view_count: number | null
         }
         Insert: {
           category: string
@@ -151,13 +154,16 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          last_viewed_at?: string | null
           latitude?: number | null
           location: string
           longitude?: number | null
           name: string
+          popularity_score?: number | null
           rating?: number | null
           updated_at?: string | null
           user_id: string
+          view_count?: number | null
         }
         Update: {
           category?: string
@@ -165,13 +171,16 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          last_viewed_at?: string | null
           latitude?: number | null
           location?: string
           longitude?: number | null
           name?: string
+          popularity_score?: number | null
           rating?: number | null
           updated_at?: string | null
           user_id?: string
+          view_count?: number | null
         }
         Relationships: []
       }

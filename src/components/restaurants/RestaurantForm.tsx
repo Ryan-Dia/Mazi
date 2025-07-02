@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { LocationPicker } from './LocationPicker';
 
 interface Restaurant {
   id: string;
@@ -59,24 +61,13 @@ export const RestaurantForm = ({ restaurant, onSuccess, onCancel }: RestaurantFo
     }
   }, [restaurant]);
 
-  const getCoordinates = async (address: string) => {
-    try {
-      // Using a free geocoding service
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
-      );
-      const data = await response.json();
-      
-      if (data.length > 0) {
-        return {
-          latitude: parseFloat(data[0].lat),
-          longitude: parseFloat(data[0].lon)
-        };
-      }
-    } catch (error) {
-      console.error('Geocoding error:', error);
-    }
-    return { latitude: 37.5665, longitude: 126.978 }; // Default to Seoul
+  const handleLocationSelect = (location: { address: string; latitude: number; longitude: number }) => {
+    setForm(prev => ({
+      ...prev,
+      location: location.address,
+      latitude: location.latitude,
+      longitude: location.longitude
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,17 +75,14 @@ export const RestaurantForm = ({ restaurant, onSuccess, onCancel }: RestaurantFo
     setLoading(true);
 
     try {
-      // Get coordinates for the location
-      const coordinates = await getCoordinates(form.location);
-      
       const restaurantData = {
         name: form.name,
         location: form.location,
         category: form.category,
         description: form.description,
         rating: form.rating,
-        latitude: coordinates.latitude,
-        longitude: coordinates.longitude,
+        latitude: form.latitude,
+        longitude: form.longitude,
         user_id: user?.id
       };
 
@@ -136,7 +124,7 @@ export const RestaurantForm = ({ restaurant, onSuccess, onCancel }: RestaurantFo
         <CardTitle>{restaurant ? '맛집 수정' : '맛집 추가'}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">맛집 이름</Label>
             <Input
@@ -149,14 +137,37 @@ export const RestaurantForm = ({ restaurant, onSuccess, onCancel }: RestaurantFo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">주소</Label>
-            <Input
-              id="location"
-              value={form.location}
-              onChange={(e) => setForm({...form, location: e.target.value})}
-              placeholder="주소를 입력하세요"
-              required
-            />
+            <Label>위치 선택</Label>
+            <Tabs defaultValue="map" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="map">지도에서 선택</TabsTrigger>
+                <TabsTrigger value="manual">직접 입력</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="map" className="mt-4">
+                <LocationPicker 
+                  onLocationSelect={handleLocationSelect}
+                  initialLocation={form.latitude && form.longitude ? {
+                    address: form.location,
+                    latitude: form.latitude,
+                    longitude: form.longitude
+                  } : undefined}
+                />
+              </TabsContent>
+              
+              <TabsContent value="manual" className="mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="location">주소</Label>
+                  <Input
+                    id="location"
+                    value={form.location}
+                    onChange={(e) => setForm({...form, location: e.target.value})}
+                    placeholder="주소를 입력하세요"
+                    required
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           <div className="space-y-2">

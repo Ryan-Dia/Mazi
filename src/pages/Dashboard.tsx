@@ -5,12 +5,21 @@ import { BottomNav } from '@/components/navigation/BottomNav';
 import { RestaurantList } from '@/components/restaurants/RestaurantList';
 import { FriendsList } from '@/components/friends/FriendsList';
 import { MapView } from '@/components/map/MapView';
+import { HomePage } from '@/components/home/HomePage';
 
 export const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState('restaurants');
+  const [activeTab, setActiveTab] = useState('home');
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'home':
+        return (
+          <HomePage 
+            onAddRestaurant={() => setActiveTab('restaurants')}
+            onViewMap={() => setActiveTab('map')}
+            onViewFriends={() => setActiveTab('friends')}
+          />
+        );
       case 'restaurants':
         return <RestaurantList />;
       case 'friends':
@@ -18,7 +27,11 @@ export const Dashboard = () => {
       case 'map':
         return <MapView />;
       default:
-        return <RestaurantList />;
+        return <HomePage 
+          onAddRestaurant={() => setActiveTab('restaurants')}
+          onViewMap={() => setActiveTab('map')}
+          onViewFriends={() => setActiveTab('friends')}
+        />;
     }
   };
 
