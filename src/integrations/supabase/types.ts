@@ -130,6 +130,50 @@ export type Database = {
           },
         ]
       }
+      reservations: {
+        Row: {
+          created_at: string
+          id: string
+          party_size: number
+          reservation_date: string
+          reservation_time: string
+          restaurant_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          party_size: number
+          reservation_date: string
+          reservation_time: string
+          restaurant_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          party_size?: number
+          reservation_date?: string
+          reservation_time?: string
+          restaurant_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           category: string

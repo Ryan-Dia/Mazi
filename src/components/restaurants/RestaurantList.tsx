@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, MapPin, Star, Edit, Trash2, Calendar } from 'lucide-react';
+import { Plus, MapPin, Star, Edit, Trash2, Calendar, LogIn } from 'lucide-react';
 import { RestaurantForm } from './RestaurantForm';
 import { ReservationSystem } from './ReservationSystem';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +26,11 @@ interface Restaurant {
   image_url: string | null;
 }
 
-export const RestaurantList = () => {
+interface RestaurantListProps {
+  onAuthRequired?: () => void;
+}
+
+export const RestaurantList = ({ onAuthRequired }: RestaurantListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -92,6 +96,14 @@ export const RestaurantList = () => {
     fetchRestaurants();
   };
 
+  const handleAddRestaurant = () => {
+    if (!user) {
+      onAuthRequired?.();
+      return;
+    }
+    setShowForm(true);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -103,14 +115,14 @@ export const RestaurantList = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">내 맛집 리스트</h2>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          맛집 추가
+        <h2 className="text-2xl font-bold text-gray-900">맛집 리스트</h2>
+        <Button onClick={handleAddRestaurant}>
+          {user ? <Plus className="h-4 w-4 mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
+          {user ? '맛집 추가' : '로그인 후 추가'}
         </Button>
       </div>
 
-      {showForm && (
+      {showForm && user && (
         <RestaurantForm
           restaurant={editingRestaurant}
           onSuccess={handleFormSuccess}
@@ -208,9 +220,9 @@ export const RestaurantList = () => {
           <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">맛집이 없습니다</h3>
           <p className="text-gray-500 mb-4">첫 번째 맛집을 추가해보세요!</p>
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            맛집 추가
+          <Button onClick={handleAddRestaurant}>
+            {user ? <Plus className="h-4 w-4 mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
+            {user ? '맛집 추가' : '로그인 후 추가'}
           </Button>
         </div>
       )}

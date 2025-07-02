@@ -11,22 +11,14 @@ import { useToast } from '@/hooks/use-toast';
 import { CalendarDays, Clock, Users, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import type { Tables } from '@/integrations/supabase/types';
 
 interface ReservationSystemProps {
   restaurantId: string;
   restaurantName: string;
 }
 
-interface Reservation {
-  id: string;
-  restaurant_id: string;
-  user_id: string;
-  reservation_date: string;
-  reservation_time: string;
-  party_size: number;
-  status: string;
-  created_at: string;
-}
+type Reservation = Tables<'reservations'>;
 
 const timeSlots = [
   '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
@@ -108,7 +100,7 @@ export const ReservationSystem = ({ restaurantId, restaurantName }: ReservationS
         reservation_date: format(selectedDate, 'yyyy-MM-dd'),
         reservation_time: selectedTime,
         party_size: partySize,
-        status: 'confirmed'
+        status: 'confirmed' as const
       };
 
       const { error } = await supabase
@@ -160,6 +152,16 @@ export const ReservationSystem = ({ restaurantId, restaurantName }: ReservationS
       });
     }
   };
+
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-gray-500">예약하려면 로그인이 필요합니다.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, Clock, Star, MapPin, Eye } from 'lucide-react';
+import { TrendingUp, Clock, Star, MapPin, Eye, Calendar } from 'lucide-react';
 
 interface PopularRestaurant {
   id: string;
@@ -19,6 +19,7 @@ interface PopularRestaurant {
 
 export const PopularRestaurants = () => {
   const [dailyPopular, setDailyPopular] = useState<PopularRestaurant[]>([]);
+  const [weeklyPopular, setWeeklyPopular] = useState<PopularRestaurant[]>([]);
   const [monthlyPopular, setMonthlyPopular] = useState<PopularRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +37,18 @@ export const PopularRestaurants = () => {
         console.error('Daily popular restaurants error:', dailyError);
       }
 
+      // 주간 인기 맛집 (7일 이내 조회된 것 중 상위 5개)
+      const { data: weeklyData, error: weeklyError } = await supabase
+        .from('restaurants')
+        .select('*')
+        .gte('last_viewed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order('view_count', { ascending: false })
+        .limit(5);
+
+      if (weeklyError) {
+        console.error('Weekly popular restaurants error:', weeklyError);
+      }
+
       // 월간 인기 맛집 (인기 점수 기준 상위 5개)
       const { data: monthlyData, error: monthlyError } = await supabase
         .from('restaurants')
@@ -48,9 +61,11 @@ export const PopularRestaurants = () => {
       }
 
       console.log('Daily popular data:', dailyData);
+      console.log('Weekly popular data:', weeklyData);
       console.log('Monthly popular data:', monthlyData);
 
       setDailyPopular(dailyData || []);
+      setWeeklyPopular(weeklyData || []);
       setMonthlyPopular(monthlyData || []);
     } catch (error) {
       console.error('Error fetching popular restaurants:', error);
@@ -128,10 +143,14 @@ export const PopularRestaurants = () => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="daily" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="daily" className="flex items-center">
               <Clock className="h-4 w-4 mr-1" />
               일일 TOP 5
+            </TabsTrigger>
+            <TabsTrigger value="weekly" className="flex items-center">
+              <Calendar className="h-4 w-4 mr-1" />
+              주간 TOP 5
             </TabsTrigger>
             <TabsTrigger value="monthly" className="flex items-center">
               <TrendingUp className="h-4 w-4 mr-1" />
@@ -157,6 +176,24 @@ export const PopularRestaurants = () => {
             </div>
           </TabsContent>
           
+          <TabsContent value="weekly" className="mt-4">
+            <div className="space-y-3">
+              {weeklyPopular.length > 0 ? (
+                weeklyPopular.map((restaurant, index) => (
+                  <RestaurantCard
+                    key={restaurant.id}
+                    restaurant={restaurant}
+                    rank={index + 1}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  이번 주 조회된 맛집이 없습니다.
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
           <TabsContent value="monthly" className="mt-4">
             <div className="space-y-3">
               {monthlyPopular.length > 0 ? (
@@ -176,6 +213,6 @@ export const PopularRestaurants = () => {
           </TabsContent>
         </Tabs>
       </CardContent>
-      </Card>
+    </Card>
   );
 };
